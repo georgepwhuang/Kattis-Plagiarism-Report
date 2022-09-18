@@ -104,6 +104,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("link", type=str, help="Link to Kattis Standings")
     parser.add_argument("-p", action="store_true")
+    parser.add_argument("-q", type=str, default="A")
     args = parser.parse_args()
     standings_link = args.link
 
@@ -179,7 +180,8 @@ if __name__ == "__main__":
                 "%H:%M")
             end_time = end_time.replace(year=today.year, month=today.month, day=today.day)
         table = soup.find(attrs={"class": "standings-table"})
-        assignment = table.find("thead").find("a")
+        question = ord(args.q.upper()[0]) - ord("A"[0])
+        assignment = table.find("thead").find_all("a")[question]
         student_list = table.find_all_next("tr")[1:-1]
 
         accepted = set()
@@ -188,14 +190,17 @@ if __name__ == "__main__":
 
         for student in student_list:
             username = student.find("a").getText().strip()
-            solve = bool(int(student.find(attrs={"class": "standings-cell-score"}).getText()) > 0)
-            if not solve:
-                if student.find("i") is None:
-                    no_submission.add(username)
-                else:
-                    attempted.add(username)
-            else:
+            solve = student.find(attrs={"class": "standings-cell-score"}).find_all_next("td")[question]
+            if solve.get("class") is None:
+                no_submission.add(username)
+            elif "attempted" in solve.get("class"):
+                attempted.add(username)
+            elif "solved" in solve.get("class"):
                 accepted.add(username)
+            elif "first" in solve.get("class"):
+                accepted.add(username)
+            else:
+                raise RuntimeError
     console.print(f"[green]Retrieved Assignments and Students")
 
     student_list = accepted.union(attempted).union(no_submission)
