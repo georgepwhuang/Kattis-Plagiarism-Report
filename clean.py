@@ -180,6 +180,8 @@ if __name__ == "__main__":
                 "%H:%M")
             end_time = end_time.replace(year=today.year, month=today.month, day=today.day)
         table = soup.find(attrs={"class": "standings-table"})
+        if not args.q.isalpha():
+            raise UserWarning("Input must be the alphabet representation of the question")
         question = ord(args.q.upper()[0]) - ord("A"[0])
         assignment = table.find("thead").find_all("a")[question]
         student_list = table.find_all_next("tr")[1:-1]
@@ -273,7 +275,7 @@ if __name__ == "__main__":
             for submission in tqdm(os.listdir(SUBMISSION_DIR), desc="Removing redundant submissions"):
                 if submission not in submission_id_list and os.path.isdir(os.path.join(SUBMISSION_DIR, submission)):
                     shutil.rmtree(os.path.join(SUBMISSION_DIR, submission))
-            for id_ in submission_id_list:
+            for author, id_ in submission_dict.items():
                 if id_ not in os.listdir(SUBMISSION_DIR):
                     missing_submission.append(author)
             if len(missing_submission) > 0:
