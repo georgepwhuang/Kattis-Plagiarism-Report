@@ -103,18 +103,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("link", type=str, help="Link to Kattis Standings")
-    parser.add_argument("-p", action="store_true")
-    parser.add_argument("-q", type=str, default="A")
-    parser.add_argument("-f", action="store_true")
-    parser.add_argument("-c", action="store_true")
+    parser.add_argument("-p", action="store_true", help="Password mode: login by password")
+    parser.add_argument("-q", type=str, default="A", help="Check particular question")
+    parser.add_argument("-f", action="store_true", help="Fast mode: check plagiarism only for AC cases")
+    parser.add_argument("-c", action="store_true", help="Check mode: generate report only, no filter of submission files")
     args = parser.parse_args()
     standings_link = args.link
 
     console = Console()
-
-    if re.match("(https?://)?.*\.kattis\.com/.*/problems/?", standings_link):
+    if re.match("(https?://)?.*\.kattis\.com/.*/assignments", standings_link):
+        standings_link = posixpath.join(standings_link, "standings")
+    elif re.match("(https?://)?.*\.kattis\.com/.*/assignments/?", standings_link):
         standings_link = posixpath.join(posixpath.dirname(standings_link), "standings")
-    elif not re.match("(https?://)?.*\.kattis\.com/.*/standings/?", standings_link):
+    elif not re.match("(https?://)?.*\.kattis\.com/.*/assignments/standings/?", standings_link):
         console.print("[red] Please input a link of a valid Kattis Standing Page")
         sys.exit(1)
 
