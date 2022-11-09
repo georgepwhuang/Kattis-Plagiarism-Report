@@ -105,6 +105,8 @@ if __name__ == "__main__":
     parser.add_argument("link", type=str, help="Link to Kattis Standings")
     parser.add_argument("-p", action="store_true")
     parser.add_argument("-q", type=str, default="A")
+    parser.add_argument("-f", action="store_true")
+    parser.add_argument("-c", action="store_true")
     args = parser.parse_args()
     standings_link = args.link
 
@@ -218,18 +220,22 @@ if __name__ == "__main__":
     with console.status(f"[green]Retrieving Submissions for [white]{problem} [green]from "
                         f"[white]{start_time.strftime(DT_FORMAT)}"):
         while loop:
+            params = {"problem": problem, "language": "Java", "page": page}
+            if args.f:
+                params["status"] = "AC"
             if args.p:
                 result = requests.get(f"https://{kattis_domain}.kattis.com/submissions",
-                                      params={"problem": problem, "language": "Java", "page": page, "status": "AC"},
-                                      cookies=login_cookies)
+                                      params=params, cookies=login_cookies)
             else:
                 result = requests.get(get_url(cfg, 'submissionsurl', 'submissions'),
-                                      params={"problem": problem, "language": "Java", "page": page, "status": "AC"},
-                                      cookies=login_cookies)
+                                      params=params, cookies=login_cookies)
             page += 1
             plain_result = result.content.decode('utf-8').replace('<br />', '\n')
             soup = BeautifulSoup(plain_result, 'html.parser')
             submissions = soup.find(id="judge_table").tbody.find_all_next("tr")
+            if len(submissions) == 0:
+                loop = False
+                break
             for submission in submissions:
                 if submission.get("class") is not None and "testcases-row" in submission.get("class"):
                     continue
@@ -267,21 +273,22 @@ if __name__ == "__main__":
 
     submission_id_list = submission_dict.values()
 
-    missing_submission = []
-    try:
-        if len(os.listdir(SUBMISSION_DIR)) == 0:
-            console.print(f"[red]Warning: Submission Folder is Empty")
-        else:
-            for submission in tqdm(os.listdir(SUBMISSION_DIR), desc="Removing redundant submissions"):
-                if submission not in submission_id_list and os.path.isdir(os.path.join(SUBMISSION_DIR, submission)):
-                    shutil.rmtree(os.path.join(SUBMISSION_DIR, submission))
-            for author, id_ in submission_dict.items():
-                if id_ not in os.listdir(SUBMISSION_DIR):
-                    missing_submission.append(author)
-            if len(missing_submission) > 0:
-                console.print(f"[red]Submissions Missing: {missing_submission}")
-    except FileNotFoundError:
-        console.print(f"[red]Warning: Submission Folder Not Found")
+    if not args.c:
+        missing_submission = []
+        try:
+            if len(os.listdir(SUBMISSION_DIR)) == 0:
+                console.print(f"[red]Warning: Submission Folder is Empty")
+            else:
+                for submission in tqdm(os.listdir(SUBMISSION_DIR), desc="Removing redundant submissions"):
+                    if submission not in submission_id_list and os.path.isdir(os.path.join(SUBMISSION_DIR, submission)):
+                        shutil.rmtree(os.path.join(SUBMISSION_DIR, submission))
+                for author, id_ in submission_dict.items():
+                    if id_ not in os.listdir(SUBMISSION_DIR):
+                        missing_submission.append(author)
+                if len(missing_submission) > 0:
+                    console.print(f"[red]Submissions Missing: {missing_submission}")
+        except FileNotFoundError:
+            console.print(f"[red]Warning: Submission Folder Not Found")
 
     console.rule(f"[green]Analysis Report")
     console.print(f"[red]Red Plagiarism Notices: {sorted(red_plagiarism)}")
