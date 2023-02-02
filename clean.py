@@ -111,11 +111,13 @@ if __name__ == "__main__":
     standings_link = args.link
 
     console = Console()
-    if re.match("(https?://)?.*\.kattis\.com/.*/assignments", standings_link):
-        standings_link = posixpath.join(standings_link, "standings")
-    elif re.match("(https?://)?.*\.kattis\.com/.*/assignments/?", standings_link):
+    if re.match("(https?://)?.*\.kattis\.com/.+/assignments/.+/standings/?", standings_link):
+        pass
+    elif re.match("(https?://)?.*\.kattis\.com/.+/assignments/.+/.+/?", standings_link):
         standings_link = posixpath.join(posixpath.dirname(standings_link), "standings")
-    elif not re.match("(https?://)?.*\.kattis\.com/.*/assignments/standings/?", standings_link):
+    elif re.match("(https?://)?.*\.kattis\.com/.+/assignments/.+/?", standings_link):
+        standings_link = posixpath.join(standings_link, "standings")
+    else:
         console.print("[red] Please input a link of a valid Kattis Standing Page")
         sys.exit(1)
 
@@ -161,7 +163,7 @@ if __name__ == "__main__":
     console.print(f"[green]Logged in as [white]{user}")
 
     with console.status("[green]Retrieving Assignments and Students") as status:
-        standings = requests.get(standings_link, cookies=login_cookies)
+        standings = requests.get(standings_link.strip(), cookies=login_cookies)
         plain_standings = standings.content.decode('utf-8').replace('<br />', '\n')
         soup = BeautifulSoup(plain_standings, 'html.parser')
         try:
